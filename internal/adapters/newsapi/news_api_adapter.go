@@ -2,15 +2,14 @@ package newsapi
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"g_investment/internal/domain"
 	"g_investment/internal/domain/dtos"
 	"g_investment/internal/ports"
 	"io"
-	"log"
 	"net/http"
 	"os"
+	"time"
 
 	"gorm.io/gorm"
 )
@@ -39,52 +38,47 @@ func (adapter *NewsApiAdapter) FetchNews() (*dtos.NewsResponseDTO, error) {
 	return locaJsonFile()
 }
 
-func (adapter *NewsApiAdapter) SaveNews(newsSlice []domain.News) error {
-	for j, news := range newsSlice[:3] {
-		if adapter.CheckIfNewsExists(&news) {
-			log.Printf("News already exists: %s", news.Url)
-			continue
+func (adapter *NewsApiAdapter) SaveNews(newsDTO *dtos.NewsResponseDTO) error {
+
+	for _, feed := range newsDTO.Feed {
+		parsedTime, err := parseTime(&feed.TimePublished)
+		if err != nil {
+			return err
 		}
+		news := domain.NewNews(
+			feed.URL, feed.Title, feed.Authors, feed.OverallSentimentScore, feed.Summary, feed.BannerImage, *parsedTime)
 
-		for i := range news.NewsStocks {
-			ns := &news.NewsStocks[i]
-
-			existingStock := adapter.GetStockIfAlreadyExists(ns)
-			if existingStock != nil {
-				ns.Stock.Model.ID = existingStock.Model.ID
-				ns.StockID = existingStock.Model.ID
-			} else {
-				adapter.CreateStock(ns)
+		for _, tickerSentiment := range feed.TickerSentiment {
+			var stock domain.Stock
+			stock.Symbol = tickerSentiment.Ticker
+			err = adapter.repository.Where("symbol = ?", stock.Symbol).FirstOrCreate(&stock).Error
+			if err != nil {
+				return err
 			}
-		}
 
-		if err := adapter.repository.Save(&news).Error; err != nil {
-			log.Printf("Index: %d  Error: %s", j, err)
-			continue
+			news.NewsStocks = append(news.NewsStocks, domain.NewsStock{
+				StockID:             stock.ID,
+				RelevanceScore:      tickerSentiment.RelevanceScore,
+				StockSentimentScore: tickerSentiment.TickerSentimentScore,
+				StockSentimentLabel: tickerSentiment.TickerSentimentLabel,
+			})
+		}
+		err = adapter.repository.Create(&news).Error
+		if err != nil {
+			return err
 		}
 	}
 	return nil
 }
 
-func (adapter *NewsApiAdapter) CreateStock(newsStock *domain.NewsStock) {
-	if err := adapter.repository.Create(newsStock.Stock).Error; err != nil {
-		log.Printf("Error creating stock: %s", err)
+func parseTime(timeString *string) (*time.Time, error) {
+	layout := "20060102T150405"
+	parsedTime, err := time.Parse(layout, *timeString)
+	if err != nil {
+		fmt.Printf("Error parsing time: %v\n", err)
+		return nil, err
 	}
-}
-
-func (adapter *NewsApiAdapter) GetStockIfAlreadyExists(newsStock *domain.NewsStock) *domain.Stock {
-	var existingStock domain.Stock
-	result := adapter.repository.Where("symbol = ?", newsStock.Stock.Symbol).First(&existingStock)
-	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-		return &existingStock
-	}
-	return nil
-}
-
-func (adapter *NewsApiAdapter) CheckIfNewsExists(news *domain.News) bool {
-	var existingNews domain.News
-	result := adapter.repository.Where("url = ?", news.Url).First(&existingNews)
-	return !errors.Is(result.Error, gorm.ErrRecordNotFound)
+	return &parsedTime, nil
 }
 
 func (adapter *NewsApiAdapter) GetNews() (*dtos.NewsResponseDTO, error) {

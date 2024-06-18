@@ -1,15 +1,14 @@
 package main
 
 import (
-	"bytes"
 	"fmt"
 	"g_investment/internal/adapters/httpHandler"
 	"g_investment/internal/adapters/newsapi"
 	"g_investment/internal/app"
+	"g_investment/internal/domain"
 	"log"
 	"net/http"
 	"os"
-	"os/exec"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -18,39 +17,9 @@ import (
 	"gorm.io/gorm"
 )
 
-var dbURL string
 var dbUser string
 var dbPassword string
 var dbName string
-
-func runFlywayMigrations() {
-	cmd := exec.Command("flyway", "-X", "-url="+dbURL, "-user="+dbUser, "-password="+dbPassword, "migrate")
-
-	var outb, errb bytes.Buffer
-	cmd.Stdout = &outb
-	cmd.Stderr = &errb
-
-	if err := cmd.Run(); err != nil {
-		log.Fatalf("Error running flyway migrations: %v, stderr: %s", err, errb.String())
-	}
-
-	log.Printf("Database migrations applied successfully: %s", outb.String())
-}
-
-func listTables(db *gorm.DB) error {
-	var tables []string
-	query := "SELECT tablename FROM pg_tables WHERE schemaname='public'"
-	if err := db.Raw(query).Scan(&tables).Error; err != nil {
-		return fmt.Errorf("error listing tables: %w", err)
-	}
-
-	log.Println("Available tables:")
-	for _, table := range tables {
-		log.Println(table)
-	}
-
-	return nil
-}
 
 func setupDatabase() (*gorm.DB, error) {
 	dsn := fmt.Sprintf("host=localhost dbname=%s user=%s password=%s", dbName, dbUser, dbPassword)
@@ -59,9 +28,11 @@ func setupDatabase() (*gorm.DB, error) {
 		return nil, fmt.Errorf("failed to open database: %w", err)
 	}
 
-	if err := listTables(db); err != nil {
-		log.Printf("Error during listing tables: %v", err)
+	err = db.AutoMigrate(&domain.News{}, &domain.NewsStock{}, &domain.Stock{})
+	if err != nil {
+		log.Fatalln("Error migrating database: ", err)
 	}
+	log.Println("Database migrated successfully")
 
 	return db, nil
 }
@@ -70,7 +41,6 @@ func initEnvVariables() {
 	if err := godotenv.Load(); err != nil {
 		log.Fatalf("Error loading .env file: %v", err)
 	}
-	dbURL = os.Getenv("FLYWAY_URL")
 	dbUser = os.Getenv("FLYWAY_G_INVESTMENT_DATABASE_USERNAME")
 	dbPassword = os.Getenv("FLYWAY_G_INVESTMENT_DATABASE_PASSWORD")
 	dbName = os.Getenv("POSTGRES_DATABASE_NAME")
@@ -78,11 +48,14 @@ func initEnvVariables() {
 
 func main() {
 	initEnvVariables()
-	runFlywayMigrations()
+	db, err := setupDatabase()
+	if err != nil {
+		log.Fatalf("Error setting up database: %v", err)
+
+	}
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
 
-	db, err := setupDatabase()
 	if err != nil {
 		log.Fatalf("Error setting up database: %v", err)
 	}

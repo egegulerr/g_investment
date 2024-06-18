@@ -3,19 +3,20 @@ package domain
 import (
 	"time"
 
+	"github.com/lib/pq"
 	"gorm.io/gorm"
 )
 
 type News struct {
 	gorm.Model
-	Url                      string
-	Title                    string
-	Author                   string
-	SentimentalAnalysisScore float64
-	Date                     time.Time
-	Summary                  string
-	Image                    string
-	NewsStocks               []NewsStock `gorm:"foreignKey:NewsID"`
+	Url                      string         `json:"url"`
+	Title                    string         `json:"title"`
+	Authors                  pq.StringArray `gorm:"type:text[]" json:"authors"`
+	SentimentalAnalysisScore float64        `json:"sentimentalAnalysisScore"`
+	Date                     time.Time      `json:"date"`
+	Summary                  string         `json:"summary"`
+	Image                    string         `json:"image"`
+	NewsStocks               []NewsStock    `gorm:"foreignKey:NewsID"`
 }
 
 type NewsStock struct {
@@ -26,20 +27,19 @@ type NewsStock struct {
 	Stock Stock `gorm:"foreignKey:StockID"`
 	News  News  `gorm:"foreignKey:NewsID"`
 
-	RelevanceScore      string
-	StockSentimentScore string
-	StockSentimentLabel string
+	RelevanceScore      string `json:"relevance_score"`
+	StockSentimentScore string `json:"stock_sentiment_score"`
+	StockSentimentLabel string `json:"stock_sentiment_label"`
 }
 
-func NewNews(url string, title string, author string, sentimentalAnalysisScore float64, summary string, image string, date time.Time, newsTicker []NewsStock) *News {
+func NewNews(url string, title string, author []string, sentimentalAnalysisScore float64, summary string, image string, date time.Time) *News {
 	return &News{
 		Url:                      url,
 		Title:                    title,
-		Author:                   author,
+		Authors:                  author,
 		SentimentalAnalysisScore: sentimentalAnalysisScore,
 		Date:                     date,
 		Summary:                  summary,
 		Image:                    image,
-		NewsStocks:               newsTicker,
 	}
 }

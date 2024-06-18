@@ -32,8 +32,7 @@ func (s *NewsService) FetchAndSaveNews() error {
 	if err != nil {
 		return fmt.Errorf("news service: failed to fetch news: %w", err)
 	}
-	news := createNewsDomainObject(newsDTO)
-	err = s.provider.SaveNews(news)
+	err = s.provider.SaveNews(newsDTO)
 	if err != nil {
 		return fmt.Errorf("news service: failed to save news to db: %w", err)
 
@@ -56,24 +55,15 @@ func createNewsDomainObject(newsDTO *dtos.NewsResponseDTO) []domain.News {
 		news := domain.NewNews(
 			item.URL,
 			item.Title,
-			authorsToString(item.Authors),
+			item.Authors,
 			item.OverallSentimentScore,
 			item.Summary,
 			item.BannerImage,
 			parsedTime,
-			extractTickerList(item.TickerSentiment),
 		)
 		newsItems = append(newsItems, *news)
 	}
 	return newsItems
-}
-
-func authorsToString(authors []string) string {
-	if len(authors) > 0 {
-		return authors[0]
-	} else {
-		return "Unknown"
-	}
 }
 
 func extractTickerList(tickerSentiments []dtos.TickerSentimentDTO) []domain.NewsStock {
