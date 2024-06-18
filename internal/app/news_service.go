@@ -1,8 +1,11 @@
 package app
 
 import (
+	"fmt"
 	"g_investment/internal/domain"
+	"g_investment/internal/domain/dtos"
 	"g_investment/internal/ports"
+	"time"
 )
 
 type NewsService struct {
@@ -13,10 +16,75 @@ func NewNewsService(provider ports.NewsProvider) *NewsService {
 	return &NewsService{provider: provider}
 }
 
-func (s *NewsService) GetNews() ([]domain.News, error) {
-	return s.provider.FetchNewsFromDB()
-	/*
-	   TODO
-	   dto := mapToDomainToDto(news)
-	*/
+func (s *NewsService) GetNewsFromDB() ([]domain.News, error) {
+	newsDTO, err := s.provider.GetNews()
+	if err != nil {
+		return nil, fmt.Errorf("news service: failed to fetch news from db: %w", err)
+	}
+	news := createNewsDomainObject(newsDTO)
+
+	return news, nil
+}
+
+func (s *NewsService) FetchAndSaveNews() error {
+	newsDTO, err := s.provider.FetchNews()
+
+	if err != nil {
+		return fmt.Errorf("news service: failed to fetch news: %w", err)
+	}
+	news := createNewsDomainObject(newsDTO)
+	err = s.provider.SaveNews(news)
+	if err != nil {
+		return fmt.Errorf("news service: failed to save news to db: %w", err)
+
+	}
+	return nil
+}
+
+func createNewsDomainObject(newsDTO *dtos.NewsResponseDTO) []domain.News {
+
+	newsItems := make([]domain.News, 0)
+	for _, item := range newsDTO.Feed {
+
+		layout := "20060102T150405"
+		parsedTime, err := time.Parse(layout, item.TimePublished)
+		if err != nil {
+			fmt.Printf("Error parsing time: %v\n", err)
+			continue
+		}
+
+		news := domain.NewNews(
+			item.URL,
+			item.Title,
+			authorsToString(item.Authors),
+			item.OverallSentimentScore,
+			item.Summary,
+			item.BannerImage,
+			parsedTime,
+			extractTickerList(item.TickerSentiment),
+		)
+		newsItems = append(newsItems, *news)
+	}
+	return newsItems
+}
+
+func authorsToString(authors []string) string {
+	if len(authors) > 0 {
+		return authors[0]
+	} else {
+		return "Unknown"
+	}
+}
+
+func extractTickerList(tickerSentiments []dtos.TickerSentimentDTO) []domain.NewsStock {
+	stockNewsList := make([]domain.NewsStock, 0)
+	for _, tickerSentiment := range tickerSentiments {
+		stockNewsList = append(stockNewsList, domain.NewsStock{
+			Stock:               domain.Stock{Symbol: tickerSentiment.Ticker},
+			RelevanceScore:      tickerSentiment.RelevanceScore,
+			StockSentimentScore: tickerSentiment.TickerSentimentScore,
+			StockSentimentLabel: tickerSentiment.TickerSentimentLabel,
+		})
+	}
+	return stockNewsList
 }

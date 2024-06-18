@@ -15,13 +15,22 @@ func NewNewsHandler(service *app.NewsService) *NewsHandler {
 	return &NewsHandler{service: service}
 }
 
-func (h *NewsHandler) GetCompanyAndMarketNews(w http.ResponseWriter, r *http.Request) {
-	news, err := h.service.GetNews()
+func (h *NewsHandler) GetCompanyAndMarketNewsFromDB(w http.ResponseWriter, r *http.Request) {
+	news, err := h.service.GetNewsFromDB()
 	if err != nil {
 		http.Error(w, "Failed to fetch news from newsHandler", http.StatusInternalServerError)
 		return
 	}
 	respond_with_json(w, news)
+}
+
+func (h *NewsHandler) FetchNewsAndSaveToDB(w http.ResponseWriter, r *http.Request) {
+	err := h.service.FetchAndSaveNews()
+	if err != nil {
+		http.Error(w, "Failed to fetch news from newsHandler", http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
 }
 
 func (h *NewsHandler) SaveUserFavoriteNews(w http.ResponseWriter, r *http.Request) {

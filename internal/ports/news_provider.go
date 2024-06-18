@@ -1,7 +1,12 @@
 package ports
 
-import "g_investment/internal/domain"
+import (
+	"g_investment/internal/domain"
+	"g_investment/internal/domain/dtos"
+)
 
 type NewsProvider interface {
-	FetchNewsFromDB() ([]domain.News, error)
+	GetNews() (*dtos.NewsResponseDTO, error)
+	FetchNews() (*dtos.NewsResponseDTO, error)
+	SaveNews([]domain.News) error
 }

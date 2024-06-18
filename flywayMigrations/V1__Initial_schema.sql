@@ -5,12 +5,14 @@ CREATE TABLE users (
     email VARCHAR(255) UNIQUE NOT NULL,
     password VARCHAR(255) NOT NULL,
     created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITHOUT TIME ZONE
+    updated_at TIMESTAMP WITHOUT TIME ZONE,
+    deleted_at TIMESTAMP WITHOUT TIME ZONE
+
     );
 
 CREATE TABLE news (
     id SERIAL PRIMARY KEY,
-    url VARCHAR(255) NOT NULL,
+    url VARCHAR(255) UNIQUE NOT NULL,
     title VARCHAR(255),
     author VARCHAR(255),
     sentimental_analysis_score FLOAT,
@@ -18,7 +20,8 @@ CREATE TABLE news (
     summary TEXT,
     image VARCHAR(255),
     created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITHOUT TIME ZONE
+    updated_at TIMESTAMP WITHOUT TIME ZONE,
+    deleted_at TIMESTAMP WITHOUT TIME ZONE
 );
 
 
@@ -26,7 +29,8 @@ CREATE TABLE stocks (
     id SERIAL PRIMARY KEY,
     symbol VARCHAR(50) UNIQUE NOT NULL,
     created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITHOUT TIME ZONE 
+    updated_at TIMESTAMP WITHOUT TIME ZONE,
+    deleted_at TIMESTAMP WITHOUT TIME ZONE
 );
 
 CREATE TABLE news_stocks (
@@ -37,7 +41,10 @@ CREATE TABLE news_stocks (
     stock_sentiment_score VARCHAR(255),
     stock_sentiment_label VARCHAR(255),
     created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITHOUT TIME ZONE
+    updated_at TIMESTAMP WITHOUT TIME ZONE,
+    deleted_at TIMESTAMP WITHOUT TIME ZONE
+
+
 );
 
 
