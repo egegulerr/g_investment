@@ -25,11 +25,10 @@ type NewsStock struct {
 	StockID uint `gorm:"index"`
 
 	Stock Stock `gorm:"foreignKey:StockID"`
-	News  News  `gorm:"foreignKey:NewsID"`
 
-	RelevanceScore      string `json:"relevance_score"`
-	StockSentimentScore string `json:"stock_sentiment_score"`
-	StockSentimentLabel string `json:"stock_sentiment_label"`
+	RelevanceScore      float64 `json:"relevance_score"`
+	StockSentimentScore float64 `json:"stock_sentiment_score"`
+	StockSentimentLabel string  `json:"stock_sentiment_label"`
 }
 
 func NewNews(url string, title string, author []string, sentimentalAnalysisScore float64, summary string, image string, date time.Time) *News {

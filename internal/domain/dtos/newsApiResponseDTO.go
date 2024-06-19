@@ -1,6 +1,6 @@
 package dtos
 
-type NewsResponseDTO struct {
+type NewsApiResponseDTO struct {
 	Items                    string `json:"items"`
 	SentimentScoreDefinition string `json:"sentiment_score_definition"`
 	RelevanceScoreDefinition string `json:"relevance_score_definition"`
@@ -22,4 +22,11 @@ type NewsResponseDTO struct {
 		OverallSentimentLabel string               `json:"overall_sentiment_label"`
 		TickerSentiment       []TickerSentimentDTO `json:"ticker_sentiment"`
 	} `json:"feed"`
+}
+
+type TickerSentimentDTO struct {
+	Ticker               string `json:"ticker"`
+	RelevanceScore       string `json:"relevance_score"`
+	TickerSentimentScore string `json:"ticker_sentiment_score"`
+	TickerSentimentLabel string `json:"ticker_sentiment_label"`
 }

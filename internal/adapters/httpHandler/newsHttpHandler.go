@@ -16,7 +16,16 @@ func NewNewsHandler(service *app.NewsService) *NewsHandler {
 }
 
 func (h *NewsHandler) GetCompanyAndMarketNewsFromDB(w http.ResponseWriter, r *http.Request) {
-	news, err := h.service.GetNewsFromDB()
+	news, err := h.service.GetAllNews()
+	if err != nil {
+		http.Error(w, "Failed to fetch news from newsHandler", http.StatusInternalServerError)
+		return
+	}
+	respond_with_json(w, news)
+}
+
+func (h *NewsHandler) GetNewsGroupedByStockFromDB(w http.ResponseWriter, r *http.Request) {
+	news, err := h.service.GetAllNewsGroupedByStock()
 	if err != nil {
 		http.Error(w, "Failed to fetch news from newsHandler", http.StatusInternalServerError)
 		return

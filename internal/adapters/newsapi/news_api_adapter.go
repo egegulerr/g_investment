@@ -9,6 +9,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strconv"
 	"time"
 
 	"gorm.io/gorm"
@@ -34,11 +35,27 @@ func NewNewsApiAdapter(apiKey string, db *gorm.DB) ports.NewsProvider {
 	}
 }
 
-func (adapter *NewsApiAdapter) FetchNews() (*dtos.NewsResponseDTO, error) {
+func (adapter *NewsApiAdapter) FetchNewsFromAPI() (*dtos.NewsApiResponseDTO, error) {
 	return locaJsonFile()
+	/*
+		 	url := fmt.Sprintf("%s?function=NEWS_SENTIMENT&limit=%s&apikey=%s", adapter.api.BaseUrl, "100", adapter.api.ApiKey)
+			response, err := http.Get(url)
+			if err != nil {
+				return nil, fmt.Errorf("failed to fetch news: %w", err)
+			}
+			defer response.Body.Close()
+
+			newsResponseDTO, err := convertResponseToDTO(response)
+			if err != nil {
+				return nil, fmt.Errorf("failed to convert response: %w", err)
+			}
+
+			newsItems := createNewsDomainObject(newsResponseDTO)
+			return newsItems, nil
+	*/
 }
 
-func (adapter *NewsApiAdapter) SaveNews(newsDTO *dtos.NewsResponseDTO) error {
+func (adapter *NewsApiAdapter) SaveNewsToDB(newsDTO *dtos.NewsApiResponseDTO) error {
 
 	for _, feed := range newsDTO.Feed {
 		parsedTime, err := parseTime(&feed.TimePublished)
@@ -58,8 +75,8 @@ func (adapter *NewsApiAdapter) SaveNews(newsDTO *dtos.NewsResponseDTO) error {
 
 			news.NewsStocks = append(news.NewsStocks, domain.NewsStock{
 				StockID:             stock.ID,
-				RelevanceScore:      tickerSentiment.RelevanceScore,
-				StockSentimentScore: tickerSentiment.TickerSentimentScore,
+				RelevanceScore:      parseScore(&tickerSentiment.RelevanceScore),
+				StockSentimentScore: parseScore(&tickerSentiment.TickerSentimentScore),
 				StockSentimentLabel: tickerSentiment.TickerSentimentLabel,
 			})
 		}
@@ -81,27 +98,69 @@ func parseTime(timeString *string) (*time.Time, error) {
 	return &parsedTime, nil
 }
 
-func (adapter *NewsApiAdapter) GetNews() (*dtos.NewsResponseDTO, error) {
-	return locaJsonFile()
-	/*
-		 	url := fmt.Sprintf("%s?function=NEWS_SENTIMENT&limit=%s&apikey=%s", adapter.api.BaseUrl, "100", adapter.api.ApiKey)
-			response, err := http.Get(url)
-			if err != nil {
-				return nil, fmt.Errorf("failed to fetch news: %w", err)
-			}
-			defer response.Body.Close()
-
-			newsResponseDTO, err := convertResponseToDTO(response)
-			if err != nil {
-				return nil, fmt.Errorf("failed to convert response: %w", err)
-			}
-
-			newsItems := createNewsDomainObject(newsResponseDTO)
-			return newsItems, nil
-	*/
+func parseScore(scoreString *string) float64 {
+	score, err := strconv.ParseFloat(*scoreString, 64)
+	if err != nil {
+		fmt.Printf("Error parsing score: %v\n", err)
+		return 0.0
+	}
+	return score
 }
 
-func locaJsonFile() (*dtos.NewsResponseDTO, error) {
+func (adapter *NewsApiAdapter) GetAllNewsFromDB() ([]domain.News, error) {
+	var newsList []domain.News
+	err := adapter.repository.Preload("NewsStocks.Stock").Find(&newsList).Error
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch news from db: %w", err)
+	}
+	return newsList, nil
+}
+
+func (adapter *NewsApiAdapter) GetAllNewsGroupedByStock() ([]dtos.StockWithNewsDTO, error) {
+	var stocks []domain.Stock
+	err := adapter.repository.Find(&stocks).Error
+	if err != nil {
+		return nil, err
+	}
+
+	var result []dtos.StockWithNewsDTO
+	for _, stock := range stocks {
+		var newsStocks []domain.NewsStock
+		err := adapter.repository.Where("stock_id = ?", stock.ID).Find(&newsStocks).Error
+		if err != nil {
+			return nil, err
+		}
+
+		var newsList []dtos.NewsSimpleDTO
+		for _, newsStock := range newsStocks {
+			var news domain.News
+			err := adapter.repository.Where("id = ?", newsStock.NewsID).First(&news).Error
+			if err != nil {
+				return nil, err
+			}
+			newsList = append(newsList, dtos.NewsSimpleDTO{
+				ID:                       news.ID,
+				URL:                      news.Url,
+				Title:                    news.Title,
+				Authors:                  news.Authors,
+				SentimentalAnalysisScore: news.SentimentalAnalysisScore,
+				Date:                     news.Date,
+				Summary:                  news.Summary,
+				Image:                    news.Image,
+				RelevanceScore:           newsStock.RelevanceScore,
+				StockSentimentScore:      newsStock.StockSentimentScore,
+				StockSentimentLabel:      newsStock.StockSentimentLabel,
+			})
+		}
+		result = append(result, dtos.StockWithNewsDTO{
+			Symbol: stock.Symbol,
+			News:   newsList,
+		})
+	}
+	return result, nil
+}
+
+func locaJsonFile() (*dtos.NewsApiResponseDTO, error) {
 	filepath := "./internal/adapters/newsapi/response.json"
 	fileData, err := os.ReadFile(filepath)
 	fmt.Println("fileData", fileData)
@@ -109,7 +168,7 @@ func locaJsonFile() (*dtos.NewsResponseDTO, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to read file: %w", err)
 	}
-	newsResponseDTO, err := convertResponseToDTO2(fileData)
+	newsResponseDTO, err := convertLocalJsonToDTO(fileData)
 	if err != nil {
 		return nil, fmt.Errorf("failed to convert response: %w", err)
 	}
@@ -117,21 +176,21 @@ func locaJsonFile() (*dtos.NewsResponseDTO, error) {
 
 }
 
-func convertResponseToDTO2(response []byte) (*dtos.NewsResponseDTO, error) {
-	var responseJson dtos.NewsResponseDTO
+func convertLocalJsonToDTO(response []byte) (*dtos.NewsApiResponseDTO, error) {
+	var responseJson dtos.NewsApiResponseDTO
 	if err := json.Unmarshal(response, &responseJson); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal response: %w", err)
 	}
 	return &responseJson, nil
 }
 
-func convertResponseToDTO(response *http.Response) (*dtos.NewsResponseDTO, error) {
+func convertResponseToDTO(response *http.Response) (*dtos.NewsApiResponseDTO, error) {
 	body, err := io.ReadAll(response.Body)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read response body: %w", err)
 
 	}
-	var responseJson dtos.NewsResponseDTO
+	var responseJson dtos.NewsApiResponseDTO
 	if err := json.Unmarshal(body, &responseJson); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal response: %w", err)
 	}

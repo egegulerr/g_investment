@@ -6,13 +6,11 @@ import (
 
 type Stock struct {
 	gorm.Model
-	Symbol     string
-	NewsStocks []NewsStock `gorm:"foreignKey:StockID"`
+	Symbol string `gorm:"uniqueIndex" json:"symbol"`
 }
 
 func NewStock(symbol string, news []NewsStock) *Stock {
 	return &Stock{
-		Symbol:     symbol,
-		NewsStocks: news,
+		Symbol: symbol,
 	}
 }

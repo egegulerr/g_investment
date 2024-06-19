@@ -66,6 +66,7 @@ func main() {
 	newsHttpHandler := httpHandler.NewNewsHandler(newsService)
 
 	r.Get("/news", newsHttpHandler.GetCompanyAndMarketNewsFromDB)
+	r.Get("/stock-news", newsHttpHandler.GetNewsGroupedByStockFromDB)
 	r.Get("/fetch-news", newsHttpHandler.FetchNewsAndSaveToDB)
 
 	r.Post("/news", newsHttpHandler.SaveUserFavoriteNews)
