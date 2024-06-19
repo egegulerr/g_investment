@@ -1,6 +1,9 @@
 package dtos
 
-import "time"
+import (
+	"g_investment/internal/domain"
+	"time"
+)
 
 type StockWithNewsDTO struct {
 	Symbol string          `json:"symbol"`
@@ -19,4 +22,17 @@ type NewsSimpleDTO struct {
 	RelevanceScore           float64   `json:"relevance_score"`
 	StockSentimentScore      float64   `json:"stock_sentiment_score"`
 	StockSentimentLabel      string    `json:"stock_sentiment_label"`
+}
+
+type NewsStockWithDetails struct {
+	domain.NewsStock
+	NewsID                   uint      `json:"news_id"`
+	URL                      string    `json:"url"`
+	Title                    string    `json:"title"`
+	Authors                  []string  `json:"authors"`
+	SentimentalAnalysisScore float64   `json:"sentimental_analysis_score"`
+	Date                     time.Time `json:"date"`
+	Summary                  string    `json:"summary"`
+	Image                    string    `json:"image"`
+	StockSymbol              string    `json:"stock_symbol"`
 }

@@ -117,46 +117,46 @@ func (adapter *NewsApiAdapter) GetAllNewsFromDB() ([]domain.News, error) {
 }
 
 func (adapter *NewsApiAdapter) GetAllNewsGroupedByStock() ([]dtos.StockWithNewsDTO, error) {
-	var stocks []domain.Stock
-	err := adapter.repository.Find(&stocks).Error
+	var newsStocks []dtos.NewsStockWithDetails
+
+	err := adapter.repository.
+		Table("news_stocks").
+		Select(`news_stocks.*, 
+			news.id as news_id, news.url, news.title, news.authors, news.sentimental_analysis_score, 
+			news.date, news.summary, news.image, 
+			stocks.symbol as stock_symbol`).
+		Joins("left join news on news_stocks.news_id = news.id").
+		Joins("left join stocks on news_stocks.stock_id = stocks.id").
+		Find(&newsStocks).Error
 	if err != nil {
 		return nil, err
 	}
 
-	var result []dtos.StockWithNewsDTO
-	for _, stock := range stocks {
-		var newsStocks []domain.NewsStock
-		err := adapter.repository.Where("stock_id = ?", stock.ID).Find(&newsStocks).Error
-		if err != nil {
-			return nil, err
-		}
+	stockMap := make(map[string][]dtos.NewsSimpleDTO)
+	for _, ns := range newsStocks {
+		stockMap[ns.StockSymbol] = append(stockMap[ns.StockSymbol], dtos.NewsSimpleDTO{
+			ID:                       ns.NewsID,
+			URL:                      ns.URL,
+			Title:                    ns.Title,
+			Authors:                  ns.Authors,
+			SentimentalAnalysisScore: ns.SentimentalAnalysisScore,
+			Date:                     ns.Date,
+			Summary:                  ns.Summary,
+			Image:                    ns.Image,
+			RelevanceScore:           ns.RelevanceScore,
+			StockSentimentScore:      ns.StockSentimentScore,
+			StockSentimentLabel:      ns.StockSentimentLabel,
+		})
+	}
 
-		var newsList []dtos.NewsSimpleDTO
-		for _, newsStock := range newsStocks {
-			var news domain.News
-			err := adapter.repository.Where("id = ?", newsStock.NewsID).First(&news).Error
-			if err != nil {
-				return nil, err
-			}
-			newsList = append(newsList, dtos.NewsSimpleDTO{
-				ID:                       news.ID,
-				URL:                      news.Url,
-				Title:                    news.Title,
-				Authors:                  news.Authors,
-				SentimentalAnalysisScore: news.SentimentalAnalysisScore,
-				Date:                     news.Date,
-				Summary:                  news.Summary,
-				Image:                    news.Image,
-				RelevanceScore:           newsStock.RelevanceScore,
-				StockSentimentScore:      newsStock.StockSentimentScore,
-				StockSentimentLabel:      newsStock.StockSentimentLabel,
-			})
-		}
+	var result []dtos.StockWithNewsDTO
+	for symbol, newsList := range stockMap {
 		result = append(result, dtos.StockWithNewsDTO{
-			Symbol: stock.Symbol,
+			Symbol: symbol,
 			News:   newsList,
 		})
 	}
+
 	return result, nil
 }
 
