@@ -6,7 +6,7 @@ import (
 
 type Stock struct {
 	gorm.Model
-	Symbol string `gorm:"uniqueIndex" json:"symbol"`
+	Symbol string `gorm:"unique" json:"symbol"`
 }
 
 func NewStock(symbol string, news []NewsStock) *Stock {

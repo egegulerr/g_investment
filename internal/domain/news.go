@@ -9,7 +9,7 @@ import (
 
 type News struct {
 	gorm.Model
-	Url                      string         `json:"url"`
+	Url                      string         `gorm:"unique" json:"url"`
 	Title                    string         `json:"title"`
 	Authors                  pq.StringArray `gorm:"type:text[]" json:"authors"`
 	SentimentalAnalysisScore float64        `json:"sentimentalAnalysisScore"`

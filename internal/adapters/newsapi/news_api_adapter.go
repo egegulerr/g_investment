@@ -7,6 +7,7 @@ import (
 	"g_investment/internal/domain/dtos"
 	"g_investment/internal/ports"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"strconv"
@@ -64,6 +65,12 @@ func (adapter *NewsApiAdapter) SaveNewsToDB(newsDTO *dtos.NewsApiResponseDTO) er
 		}
 		news := domain.NewNews(
 			feed.URL, feed.Title, feed.Authors, feed.OverallSentimentScore, feed.Summary, feed.BannerImage, *parsedTime)
+
+		err = adapter.repository.Where("url = ?", news.Url).FirstOrCreate(&news).Error
+		if err != nil {
+			log.Printf("Found duplicate news. Skipping it: %v\n", err)
+			continue
+		}
 
 		for _, tickerSentiment := range feed.TickerSentiment {
 			var stock domain.Stock
