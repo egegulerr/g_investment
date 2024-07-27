@@ -1,4 +1,4 @@
-package httpHandler
+package httpHandlers
 
 import (
 	"encoding/json"
@@ -61,10 +61,17 @@ func (h *JwtLoginHandler) GetUser(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "No jwt cookie", http.StatusUnauthorized)
 		return
 	}
-	token, err := h.service.ParseUserTokenAndGetUser(&cookie.Value)
+
+	claims, err := h.service.ParseToken(&cookie.Value)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusUnauthorized)
 		return
 	}
-	respond_with_json(w, token)
+
+	user, err := h.service.GetUser(*claims)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return
+	}
+	respond_with_json(w, user)
 }

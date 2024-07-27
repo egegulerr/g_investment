@@ -57,7 +57,7 @@ func (s *LoginService) createJwtToken(user *domain.User) (string, error) {
 	return token, nil
 }
 
-func (s *LoginService) ParseUserTokenAndGetUser(jwtToken *string) (*domain.User, error) {
+func (s *LoginService) ParseToken(jwtToken *string) (*jwt.Claims, error) {
 	token, err := jwt.ParseWithClaims(*jwtToken, &jwt.RegisteredClaims{}, func(token *jwt.Token) (interface{}, error) {
 		return []byte(*s.jwtKey), nil
 	})
@@ -67,6 +67,10 @@ func (s *LoginService) ParseUserTokenAndGetUser(jwtToken *string) (*domain.User,
 	}
 
 	claims := token.Claims
+	return &claims, nil
+}
+
+func (s *LoginService) GetUser(claims jwt.Claims) (*domain.User, error) {
 	issuer, err := claims.GetIssuer()
 	if err != nil {
 		return nil, errors.New("cant find issuer")

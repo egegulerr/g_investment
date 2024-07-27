@@ -1,4 +1,4 @@
-package loginapi
+package adapters
 
 import (
 	"fmt"

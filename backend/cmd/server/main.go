@@ -2,18 +2,19 @@ package main
 
 import (
 	"fmt"
-	"g_investment/internal/adapters/httpHandler"
-	loginapi "g_investment/internal/adapters/loginApi"
-	"g_investment/internal/adapters/newsapi"
-	"g_investment/internal/app"
+	"g_investment/internal/adapters"
 	loginservice "g_investment/internal/app/loginService"
+	"g_investment/internal/app/newsService"
 	"g_investment/internal/domain"
+	"g_investment/internal/httpHandlers"
+	"g_investment/internal/middleware"
 	"log"
 	"net/http"
 	"os"
 
+	chiMiddleware "github.com/go-chi/chi/v5/middleware"
+
 	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
 	"github.com/joho/godotenv"
 	"gorm.io/driver/postgres"
@@ -59,7 +60,7 @@ func main() {
 
 	}
 	r := chi.NewRouter()
-	r.Use(middleware.Logger)
+	r.Use(chiMiddleware.Logger)
 	r.Use(cors.Handler(cors.Options{
 		AllowCredentials: true,
 	}))
@@ -67,26 +68,32 @@ func main() {
 	if err != nil {
 		log.Fatalf("Error setting up database: %v", err)
 	}
-	loginProvider := loginapi.NewLoginApiAdapter(db)
+	loginProvider := adapters.NewLoginApiAdapter(db)
 	loginService := loginservice.NewLoginService(loginProvider, &jwtSecretKey)
-	newsProvider := newsapi.NewNewsApiAdapter(os.Getenv("NEWS_API_KEY"), db)
-	newsService := app.NewNewsService(newsProvider)
 
-	loginHttpHandler := httpHandler.NewJwtLoginHandler(loginService)
-	newsHttpHandler := httpHandler.NewNewsHandler(newsService)
+	newsProvider := adapters.NewNewsApiAdapter(os.Getenv("NEWS_API_KEY"), db)
+	newsService := newsService.NewNewsService(newsProvider)
+
+	loginHttpHandler := httpHandlers.NewJwtLoginHandler(loginService)
+	newsHttpHandler := httpHandlers.NewNewsHandler(newsService)
+
+	authMiddleWare := middleware.NewAuthMiddleware(loginService)
 
 	r.Post("/register", loginHttpHandler.Register)
 	r.Post("/login", loginHttpHandler.Login)
 	r.Get("/user", loginHttpHandler.GetUser)
 	r.Get("/logout", loginHttpHandler.Logout)
 
-	r.Get("/news", newsHttpHandler.GetCompanyAndMarketNewsFromDB)
-	r.Get("/stock-news", newsHttpHandler.GetNewsGroupedByStockFromDB)
-	r.Get("/fetch-news", newsHttpHandler.FetchNewsAndSaveToDB)
+	r.Group(func(r chi.Router) {
+		r.Use(authMiddleWare.JwtAuthMiddleware)
+		r.Get("/news", newsHttpHandler.GetCompanyAndMarketNewsFromDB)
+		r.Get("/stock-news", newsHttpHandler.GetNewsGroupedByStockFromDB)
+		r.Get("/fetch-news", newsHttpHandler.FetchNewsAndSaveToDB)
 
-	r.Post("/news", newsHttpHandler.SaveUserFavoriteNews)
+		r.Post("/news", newsHttpHandler.SaveUserFavoriteNews)
 
-	r.Put("/news/{id}", newsHttpHandler.UpdateNews)
+		r.Put("/news/{id}", newsHttpHandler.UpdateNews)
+	})
 
 	fmt.Println("Server is running on port 3000")
 	log.Fatal(http.ListenAndServe(":3000", r))

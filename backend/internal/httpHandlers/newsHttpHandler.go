@@ -1,17 +1,17 @@
-package httpHandler
+package httpHandlers
 
 import (
 	"encoding/json"
-	"g_investment/internal/app"
+	"g_investment/internal/app/newsService"
 	"g_investment/internal/domain"
 	"net/http"
 )
 
 type NewsHandler struct {
-	service *app.NewsService
+	service *newsService.NewsService
 }
 
-func NewNewsHandler(service *app.NewsService) *NewsHandler {
+func NewNewsHandler(service *newsService.NewsService) *NewsHandler {
 	return &NewsHandler{service: service}
 }
 

@@ -1,4 +1,4 @@
-package newsapi
+package adapters
 
 import (
 	"encoding/json"
