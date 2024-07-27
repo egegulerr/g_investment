@@ -11,10 +11,10 @@ import {
   FormDescription,
   FormMessage,
   Form,
-} from "../form";
+} from "../ui/form";
 import { Spinner } from "@nextui-org/spinner";
-import { Button } from "../button";
-import { Input } from "../input";
+import { Button } from "../ui/button";
+import { Input } from "../ui/input";
 import { submitLoginForm } from "@/actions/loginFormActions";
 import { useState } from "react";
 
@@ -47,7 +47,6 @@ export default function LoginForm() {
     } finally {
       setIsLoading(false);
     }
-    submitLoginForm(values);
   }
 
   return (

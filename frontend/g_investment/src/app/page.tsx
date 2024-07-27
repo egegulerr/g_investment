@@ -1,18 +1,18 @@
-import { NextUIProvider, Spinner } from "@nextui-org/react";
+import LoginCard from "@/components/login/loginCard";
+import TypeWriter from "@/components/login/typewriter";
 import * as React from "react";
 
-export default function Home() {
+export default function Login() {
   return (
-    <NextUIProvider>
-      <div>Hello it is base page</div>
-      <div className="flex gap-4">
-        <Spinner color="default" />
-        <Spinner color="primary" />
-        <Spinner color="secondary" />
-        <Spinner color="success" />
-        <Spinner color="warning" />
-        <Spinner color="danger" />
+    <div className="min-h-screen bg-hero">
+      <div className="grid min-h-screen grid-cols-3 p-4">
+        <div className="flex justify-center items-center col-span-2 p-4">
+          <TypeWriter />
+        </div>
+        <div className="flex jsutify-center items-center p-4">
+          <LoginCard />
+        </div>
       </div>
-    </NextUIProvider>
+    </div>
   );
 }

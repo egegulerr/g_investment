@@ -7,7 +7,7 @@ import {
 } from "@/components/ui/card";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faMoneyBillTrendUp } from "@fortawesome/free-solid-svg-icons";
-import LoginForm from "@/components/ui/login/loginform";
+import LoginForm from "@/components/login/loginform";
 
 export default function LoginCard() {
   return (
