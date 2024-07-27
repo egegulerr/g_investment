@@ -63,6 +63,8 @@ func main() {
 	r.Use(chiMiddleware.Logger)
 	r.Use(cors.Handler(cors.Options{
 		AllowCredentials: true,
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedHeaders:   []string{"Accept", "Authorization", "Origin", "Content-Type", "Cookie", "Cookies", "Set-Cookie", "cookies"},
 	}))
 
 	if err != nil {
@@ -83,6 +85,7 @@ func main() {
 	r.Post("/login", loginHttpHandler.Login)
 	r.Get("/user", loginHttpHandler.GetUser)
 	r.Get("/logout", loginHttpHandler.Logout)
+	r.Get("/checkToken", loginHttpHandler.IsTokenValid)
 
 	r.Group(func(r chi.Router) {
 		r.Use(authMiddleWare.JwtAuthMiddleware)

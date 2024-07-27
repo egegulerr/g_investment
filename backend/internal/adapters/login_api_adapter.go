@@ -1,6 +1,7 @@
 package adapters
 
 import (
+	"errors"
 	"fmt"
 	"g_investment/internal/domain"
 	"g_investment/internal/domain/dtos"
@@ -31,7 +32,8 @@ func (adapter *LoginApiAdapter) GetUserWithEmail(email *string) (*domain.User, e
 	var user domain.User
 	if err := adapter.repository.Where("email = ?", email).First(&user).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
-			return nil, fmt.Errorf("no user found with email: %s", *email)
+
+			return nil, errors.New("no user found with email")
 		}
 		return nil, err
 	}

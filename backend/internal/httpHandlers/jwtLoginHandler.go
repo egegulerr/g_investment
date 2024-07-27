@@ -2,6 +2,7 @@ package httpHandlers
 
 import (
 	"encoding/json"
+	"fmt"
 	loginservice "g_investment/internal/app/loginService"
 	"g_investment/internal/domain/dtos"
 	"net/http"
@@ -33,6 +34,7 @@ func (h *JwtLoginHandler) Login(w http.ResponseWriter, r *http.Request) {
 	}
 	token, err := h.service.LoginUser(&payload)
 	if err != nil {
+		fmt.Println(err)
 		http.Error(w, err.Error(), http.StatusUnauthorized)
 		return
 	}
@@ -41,9 +43,11 @@ func (h *JwtLoginHandler) Login(w http.ResponseWriter, r *http.Request) {
 		Value:    token,
 		HttpOnly: true,
 		Secure:   true,
+		SameSite: http.SameSiteNoneMode,
 		Expires:  time.Now().Add(24 * time.Hour),
 		Path:     "/",
 	})
+	respond_with_json(w, token)
 }
 
 func (h *JwtLoginHandler) Logout(w http.ResponseWriter, r *http.Request) {
@@ -74,4 +78,20 @@ func (h *JwtLoginHandler) GetUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	respond_with_json(w, user)
+}
+
+func (h *JwtLoginHandler) IsTokenValid(w http.ResponseWriter, r *http.Request) {
+	cookie, err := r.Cookie("jwt")
+	fmt.Println(r.Cookies())
+	fmt.Print("error iccred")
+	if err != nil {
+		http.Error(w, "No jwt cookie", http.StatusUnauthorized)
+		return
+	}
+
+	_, err = h.service.ParseToken(&cookie.Value)
+	if err != nil {
+		respond_with_json(w, false)
+	}
+	respond_with_json(w, true)
 }

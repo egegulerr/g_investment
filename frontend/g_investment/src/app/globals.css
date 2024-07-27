@@ -61,3 +61,7 @@
     @apply bg-background text-foreground;
   }
 }
+
+.margin-top-2 {
+  margin-top: 2rem !important;
+}
