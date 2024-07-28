@@ -65,3 +65,16 @@
 .margin-top-2 {
   margin-top: 2rem !important;
 }
+
+.margin-top-1 {
+  margin-top: 1rem !important;
+}
+
+.news-card-dialog {
+  max-width: 40rem !important;
+  max-height: 45rem !important;
+}
+
+.news-card-overflow {
+  overflow: auto !important;
+}
