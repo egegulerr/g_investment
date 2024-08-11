@@ -2,6 +2,10 @@
 
 import { cookies } from "next/headers";
 
+type loginResponse = {
+  data: string;
+};
+
 export async function submitLoginForm(formData: any) {
   const url = process.env.BACKEND_SERVER_URL + "login";
   const response = await fetch(url, {
@@ -12,10 +16,10 @@ export async function submitLoginForm(formData: any) {
     },
     body: JSON.stringify(formData),
   });
-  const data = await response.json();
+  const data: loginResponse = await response.json();
   cookies().set({
     name: "jwt",
-    value: data,
+    value: data.data,
     httpOnly: true,
     path: "/",
     maxAge: 60 * 60 * 24 * 365 * 1000,
@@ -36,8 +40,9 @@ export async function checkJwtValidity() {
         },
       }
     );
-    return response.ok;
+    return true;
   } catch (error) {
     console.log("Jwt is not valid");
+    return false;
   }
 }

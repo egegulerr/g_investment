@@ -15,7 +15,7 @@ export async function getNewsTableData() {
       },
     });
     const data = await response.json();
-    return data;
+    return data.data;
   } catch (error) {
     console.log("Error occured while fetching news table data", error);
     return [];
@@ -33,7 +33,7 @@ export async function getNewsGroupByStocks() {
       },
     });
     const data = await response.json();
-    return data;
+    return data.data;
   } catch (error) {
     console.log("Error occured while fetching news grouped by stocks", error);
     throw error;
@@ -64,8 +64,7 @@ export async function getCompanyNameOfStock(ticker: string) {
     return data.quotes[0]?.longname || "Unknown Company";
   } catch (error) {
     console.log(
-      "Error occurred while fetching company name from symbol",
-      error
+      `Error occurred while fetching company name from symbol ${ticker}`
     );
     return "Unknown Company";
   }
