@@ -10,7 +10,7 @@ export async function middleware(req: NextRequest) {
   }
 
   const isValid = await checkJwtValidity();
-
+  console.log("is valid", isValid);
   if (!isValid && path !== "/login")
     return NextResponse.redirect(new URL("/login", req.url));
   if (isValid && path === "/") {
@@ -21,5 +21,5 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/", "/login", "/home"],
+  matcher: ["/", "/login", "/home", "/home/:path*"],
 };

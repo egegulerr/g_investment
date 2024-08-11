@@ -6,7 +6,7 @@ import { NewsStock, NewsTableData } from "@/types/newsTypes";
 import { format, parseISO } from "date-fns";
 
 import NewsCard from "../news/newsCard";
-import Scores from "../news/scores";
+import Score from "../news/score";
 
 export const columns: ColumnDef<NewsTableData>[] = [
   {
@@ -20,7 +20,7 @@ export const columns: ColumnDef<NewsTableData>[] = [
   },
   {
     accessorKey: "image",
-    enableHiding: true,
+    enableHiding: false,
     header: ({ column }) => {
       return "";
     },
@@ -70,7 +70,7 @@ export const columns: ColumnDef<NewsTableData>[] = [
     cell: ({ row }) => {
       return (
         <div>
-          <Scores score={row.original.sentimentalAnalysisScore}></Scores>
+          <Score score={row.original.sentimentalAnalysisScore}></Score>
         </div>
       );
     },

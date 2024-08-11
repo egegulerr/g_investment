@@ -24,6 +24,7 @@ import {
 import { useState } from "react";
 import { DataTablePagination } from "./newsTablePagination";
 import { DataTableViewOptions } from "./newsTableViewOptions";
+import { Button } from "@/components/ui/button";
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];

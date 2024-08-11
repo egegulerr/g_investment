@@ -82,8 +82,6 @@ func (h *JwtLoginHandler) GetUser(w http.ResponseWriter, r *http.Request) {
 
 func (h *JwtLoginHandler) IsTokenValid(w http.ResponseWriter, r *http.Request) {
 	cookie, err := r.Cookie("jwt")
-	fmt.Println(r.Cookies())
-	fmt.Print("error iccred")
 	if err != nil {
 		http.Error(w, "No jwt cookie", http.StatusUnauthorized)
 		return
@@ -91,7 +89,8 @@ func (h *JwtLoginHandler) IsTokenValid(w http.ResponseWriter, r *http.Request) {
 
 	_, err = h.service.ParseToken(&cookie.Value)
 	if err != nil {
-		respond_with_json(w, false)
+		http.Error(w, "Jwt is not valid", http.StatusUnauthorized)
+		return
 	}
 	respond_with_json(w, true)
 }

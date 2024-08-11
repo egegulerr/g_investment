@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"g_investment/internal/adapters"
 	loginservice "g_investment/internal/app/loginService"
+	"g_investment/internal/app/logoService"
 	"g_investment/internal/app/newsService"
 	"g_investment/internal/domain"
 	"g_investment/internal/httpHandlers"
@@ -25,6 +26,7 @@ var dbUser string
 var dbPassword string
 var dbName string
 var jwtSecretKey string
+var logoApiKey string
 
 func setupDatabase() (*gorm.DB, error) {
 	dsn := fmt.Sprintf("host=localhost dbname=%s user=%s password=%s", dbName, dbUser, dbPassword)
@@ -50,6 +52,7 @@ func initEnvVariables() {
 	dbPassword = os.Getenv("FLYWAY_G_INVESTMENT_DATABASE_PASSWORD")
 	dbName = os.Getenv("POSTGRES_DATABASE_NAME")
 	jwtSecretKey = os.Getenv("JWT_SECRET_KEY")
+	logoApiKey = os.Getenv("LOGO_API_KEY")
 }
 
 func main() {
@@ -76,8 +79,12 @@ func main() {
 	newsProvider := adapters.NewNewsApiAdapter(os.Getenv("NEWS_API_KEY"), db)
 	newsService := newsService.NewNewsService(newsProvider)
 
+	logoProvider := adapters.NewsLogoApiAdapter(&logoApiKey)
+	logoService := logoService.NewLogoService(logoProvider)
+
 	loginHttpHandler := httpHandlers.NewJwtLoginHandler(loginService)
 	newsHttpHandler := httpHandlers.NewNewsHandler(newsService)
+	logoHttpHandler := httpHandlers.NewLogoHandler(logoService)
 
 	authMiddleWare := middleware.NewAuthMiddleware(loginService)
 
@@ -92,10 +99,12 @@ func main() {
 		r.Get("/news", newsHttpHandler.GetCompanyAndMarketNewsFromDB)
 		r.Get("/stock-news", newsHttpHandler.GetNewsGroupedByStockFromDB)
 		r.Get("/fetch-news", newsHttpHandler.FetchNewsAndSaveToDB)
+		r.Get("/logo/{ticker}", logoHttpHandler.GetCompanyLogo)
 
 		r.Post("/news", newsHttpHandler.SaveUserFavoriteNews)
 
 		r.Put("/news/{id}", newsHttpHandler.UpdateNews)
+
 	})
 
 	fmt.Println("Server is running on port 3000")

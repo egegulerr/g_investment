@@ -49,7 +49,13 @@ export function DataTableViewOptions<TData>({
                 checked={column.getIsVisible()}
                 onCheckedChange={(value) => column.toggleVisibility(!!value)}
               >
-                {column.id === "url" ? "Source" : column.id}
+                {column.id === "url"
+                  ? "Source"
+                  : column.id === "NewsStocks"
+                  ? "Stocks"
+                  : column.id === "sentimentalAnalysisScore"
+                  ? "Score"
+                  : column.id}
               </DropdownMenuCheckboxItem>
             );
           })}
