@@ -69,3 +69,22 @@ export async function getCompanyNameOfStock(ticker: string) {
     return "Unknown Company";
   }
 }
+
+export async function getCompanyLogo(symbol: string) {
+  const url = process.env.BACKEND_SERVER_URL + "logo/" + symbol;
+
+  try {
+    const response = await fetch(url, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Cookie: cookies().toString(),
+      },
+    });
+    const data = await response.json();
+    return data.data;
+  } catch (error) {
+    console.log(`Error occured while fetching company logo ${symbol}`);
+    return null;
+  }
+}

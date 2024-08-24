@@ -6,7 +6,7 @@ import { NewsTableData } from "@/types/investmentTypes";
 import { columns } from "../table/columns";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
-import Stocks from "./stocks";
+import Stocks from "../stocks/stocks";
 
 export default function News() {
   const [isGrouped, setIsGrouped] = useState(false);
