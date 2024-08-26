@@ -1,5 +1,6 @@
 from dotenv import load_dotenv
 from groq import Groq
+import json
 import os
 
 load_dotenv()
@@ -92,7 +93,7 @@ def generate_search_terms(subject, script, amount=5):
 
     response = chat_completion.choices[0].message.content
     print(f"Created search terms: {response}")
-    return response
+    return json.loads(response)
 
 
 

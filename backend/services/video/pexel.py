@@ -6,9 +6,10 @@ import requests
 
 load_dotenv()
 PEXELS_API_KEY = os.getenv("PEXELS_API_KEY")
-DOWNLOAD_DIRECTORY = "./saved"
+DOWNLOAD_DIRECTORY = "backend/services/video/saved/clip"
 PER_PAGE_QUERY_LIMIT = 15
 MINIMUM_VIDEO_DURATION = 10
+os.makedirs(DOWNLOAD_DIRECTORY, exist_ok=True)
 
 
 def get_video_infos(term):
@@ -34,7 +35,7 @@ def filter_and_get_video_links(videos):
         if valid_videos:
             max_res_video = max(valid_videos, key=lambda video: video['width'] * video['height'])
             url = max_res_video['link']
-            filtered_videos.append(url)
+            filtered_videos.add(url)
             print("Found high res video. Appending it")
 
     return filtered_videos
@@ -42,7 +43,8 @@ def filter_and_get_video_links(videos):
 
 def download_videos_and_get_paths(links):
     paths = []
-    for link in links:
+    # TODO NO NEED TO HAVE FULL LIST ?
+    for link in list(links)[:1]:
 
         video_id = uuid.uuid4()
         save_path = f"{DOWNLOAD_DIRECTORY}/{video_id}.mp4"
